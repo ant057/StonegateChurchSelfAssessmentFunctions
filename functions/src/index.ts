@@ -4,13 +4,7 @@ import * as nodemailer from 'nodemailer';
 
 admin.initializeApp();
 
-// // Start writing Firebase Functions
-// // https://firebase.google.com/docs/functions/typescript
-//
-// export const helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+const db = admin.firestore();
 
 let transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -20,44 +14,27 @@ let transporter = nodemailer.createTransport({
     }
 });
 
-// Take the text parameter passed to this HTTP endpoint and insert it into 
-// Cloud Firestore under the path /messages/:documentId/original
-exports.addMessage = functions.https.onRequest(async (req, res) => {
-    // getting dest email by query string
-    const dest = 'oxa547@gmail.com';
-
-    const mailOptions = {
-        from: 'Tony Robinson - Peer Assessment <tonyrobinson.selfawareness@gmail.com>', //Adding sender's email
-        to: dest, //Getting recipient's email by query string
-        subject: 'Tony Robinson Coaching - Peer Assessment request', //Email subject
-        html: `Hi! <br> You have been requested to complete a peer self-awareness assessment for [].<br> If you could complete
-        this by ${new Date().toLocaleDateString()} that would be great! <br><br>Thank you so much for taking the time to assist in the leadership development of our 
-        brothers and sisters in Christ.` //Email content in HTML
-    };
-
-    functions.logger.log('Starting Send E-mail for Peer-Assessment Contacts');
-    // returning result
-    return transporter.sendMail(mailOptions, (erro, info) => {
-        if (erro) {
-            return res.send(erro.toString());
-        }
-        return res.send('Sended');
-    });
-});
-
-
-
 exports.emailPeerAssessmentContacts = functions.firestore.document('/peer-assessments/{documentId}')
     .onCreate((snap, context) => {
-        // Grab the current value of what was written to Cloud Firestore.
         const data = snap.data();
         const emailAddress = data.emailAddress;
+        const peerFullName = data.fullName;
+        const selfAssessmentId = data.selfAssessmentId;
+        let selfFullName = '';
+
+        db.doc(`self-assessments/${selfAssessmentId}`).get().then(doc => {
+            if(doc.exists) {
+                selfFullName = doc.data()?.selfUserFullName;
+            }
+        });
+
+        functions.logger.log('ok here now::' + selfFullName);
 
         const mailOptions = {
-            from: 'Tony Robinson - Peer Assessment <tonyrobinson.selfawareness@gmail.com>', //Adding sender's email
-            to: emailAddress, //Getting recipient's email by query string
-            subject: 'Tony Robinson Coaching - Peer Assessment request', //Email subject
-            html: `Hi! <br> You have been requested to complete a peer self-awareness assessment for [].<br> If you could complete
+            from: 'Tony Robinson Coaching - Peer Assessment <tonyrobinson.selfawareness@gmail.com>',
+            to: emailAddress,
+            subject: 'Tony Robinson Coaching - Peer Assessment request',
+            html: `Hi, ${peerFullName}! <br><br> You have been requested to complete a peer self-awareness assessment for <b>${selfFullName}</b>.<br> If you could complete
         this by ${new Date().toLocaleDateString()} that would be great! <br><br>Thank you so much for taking the time to assist in the leadership development of our 
         brothers and sisters in Christ.` //Email content in HTML
         };
@@ -76,8 +53,7 @@ exports.emailPeerAssessmentContacts = functions.firestore.document('/peer-assess
         // writing to Cloud Firestore.
     });
 
-// listen for new peer assessments added to /peer-assessments
-// Generate email for each one w/ valid email
+    
 // Add email sent date to peer assessment record
 
 
