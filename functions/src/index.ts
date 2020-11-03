@@ -34,16 +34,16 @@ exports.emailPeerAssessmentContacts = functions.firestore.document('/peer-assess
         // Access the parameter `{documentId}` with `context.params`
         functions.logger.log('Starting Send E-mail for Peer-Assessment Contacts::', context.params.documentId);
 
-        return transporter.sendMail(mailOptions, (erro, info) => {
+        transporter.sendMail(mailOptions, (erro, info) => {
             if (erro) {
                 functions.logger.error('Error sending e-mail::', erro.toString());
-                db.doc(`/peer-assessments/${id}`).set({
+                return db.doc(`/peer-assessments/${id}`).set({
                     lastMailError: erro.toString(),
                     lastMailDate: null
                 }, { merge: true });
             } else {
                 functions.logger.log('E-mail delivered!');
-                db.doc(`/peer-assessments/${id}`).set({
+                return db.doc(`/peer-assessments/${id}`).set({
                     lastMailError: '',
                     lastMailDate: new Date().toLocaleDateString()
                 }, { merge: true });
@@ -89,7 +89,7 @@ exports.emailPeerAssessmentContactsReminder = functions.https.onRequest((req, re
             });
         });
 
-        res.send('done');
+        res.send({ status: 'done'});
     });
 });
 
