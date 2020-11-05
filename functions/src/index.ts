@@ -15,7 +15,7 @@ let transporter = nodemailer.createTransport({
     }
 });
 
-exports.emailPeerAssessmentContacts = functions.firestore.document('/peer-assessments/{documentId}')
+exports.emailPeerAssessmentContacts = functions.firestore.document('peer-assessments/{documentId}')
     .onCreate((snap, context) => {
         const id = context.params.documentId;
         const data = snap.data();
@@ -28,30 +28,26 @@ exports.emailPeerAssessmentContacts = functions.firestore.document('/peer-assess
             subject: 'Tony Robinson Coaching - Peer Assessment request',
             html: `Hi, ${data.fullName}! <br><br> You have been requested to complete a peer self-awareness assessment for <b>${data.selfUserFullName}</b>.<br> If you could complete
             this by ${d.toLocaleDateString()} that would be great! <br><br><a href="${'http://' + data.linkToAssessment}">Click here to take your peer assessment!</a> <br><br>Thank you so much for taking the time to assist in the leadership development of our 
-            brothers and sisters in Christ.` //Email content in HTML
+            brothers and sisters in Christ.`
         };
 
-        // Access the parameter `{documentId}` with `context.params`
         functions.logger.log('Starting Send E-mail for Peer-Assessment Contacts::', context.params.documentId);
 
-        return transporter.sendMail(mailOptions, (erro, info) => {
+        transporter.sendMail(mailOptions, (erro, info) => {
             if (erro) {
                 functions.logger.error('Error sending e-mail::', erro.toString());
                 return db.doc(`/peer-assessments/${id}`).set({
                     lastMailError: erro.toString(),
                     lastMailDate: null
-                }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment ${id}::`, err));;
+                }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment:: ${id}`, err));
             } else {
                 functions.logger.log('E-mail delivered!');
                 return db.doc(`/peer-assessments/${id}`).set({
                     lastMailError: '',
                     lastMailDate: new Date().toLocaleDateString()
-                }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment ${id}::`, err));;
+                }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment:: ${id}`, err));
             }
         });
-
-        // You must return a Promise when performing asynchronous tasks inside a Functions such as
-        // writing to Cloud Firestore.
     });
 
 
@@ -66,7 +62,7 @@ exports.emailPeerAssessmentContactsReminder = functions.https.onRequest((req, re
                 subject: 'Tony Robinson Coaching - Peer Assessment reminder',
                 html: `Hi, ${element.fullName}! <br><br> We want to send you a friendly reminder to complete your peer self-awareness assessment for <b>${element.selfUserFullName}</b>.<br><br>
             <a href="${'http://' + element.linkToAssessment}">Click here to take your peer assessment!</a> <br><br>Thank you so much for taking the time to assist in the leadership development of our 
-            brothers and sisters in Christ.` //Email content in HTML
+            brothers and sisters in Christ.`
             };
 
             functions.logger.log('Starting Send E-mail for Peer-Assessment Contacts::', element.peerAssessmentId);
