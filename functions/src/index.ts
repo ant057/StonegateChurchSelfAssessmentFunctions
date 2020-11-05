@@ -34,19 +34,19 @@ exports.emailPeerAssessmentContacts = functions.firestore.document('/peer-assess
         // Access the parameter `{documentId}` with `context.params`
         functions.logger.log('Starting Send E-mail for Peer-Assessment Contacts::', context.params.documentId);
 
-        transporter.sendMail(mailOptions, (erro, info) => {
+        return transporter.sendMail(mailOptions, (erro, info) => {
             if (erro) {
                 functions.logger.error('Error sending e-mail::', erro.toString());
                 return db.doc(`/peer-assessments/${id}`).set({
                     lastMailError: erro.toString(),
                     lastMailDate: null
-                }, { merge: true });
+                }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment ${id}::`, err));;
             } else {
                 functions.logger.log('E-mail delivered!');
                 return db.doc(`/peer-assessments/${id}`).set({
                     lastMailError: '',
                     lastMailDate: new Date().toLocaleDateString()
-                }, { merge: true });
+                }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment ${id}::`, err));;
             }
         });
 
@@ -77,14 +77,14 @@ exports.emailPeerAssessmentContactsReminder = functions.https.onRequest((req, re
                     db.doc(`/peer-assessments/${element.peerAssessmentId}`).set({
                         lastMailError: erro.toString(),
                         lastMailDate: null
-                    }, { merge: true });
+                    }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment:: ${element.peerAssessmentId}`, err));
                 }
                 else {
                     functions.logger.log('E-mail delivered!');
                     db.doc(`/peer-assessments/${element.peerAssessmentId}`).set({
                         lastMailError: '',
                         lastMailDate: new Date().toLocaleDateString()
-                    }, { merge: true });
+                    }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment:: ${element.peerAssessmentId}`, err));;
                 }
             });
         });
