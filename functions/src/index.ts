@@ -33,21 +33,24 @@ exports.emailPeerAssessmentContacts = functions.firestore.document('peer-assessm
 
         functions.logger.log('Starting Send E-mail for Peer-Assessment Contacts::', context.params.documentId);
 
-        transporter.sendMail(mailOptions, (erro, info) => {
-            if (erro) {
-                functions.logger.error('Error sending e-mail::', erro.toString());
-                return db.doc(`/peer-assessments/${id}`).set({
-                    lastMailError: erro.toString(),
-                    lastMailDate: null
-                }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment:: ${id}`, err));
-            } else {
-                functions.logger.log('E-mail delivered!');
-                return db.doc(`/peer-assessments/${id}`).set({
-                    lastMailError: '',
-                    lastMailDate: new Date().toLocaleDateString()
-                }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment:: ${id}`, err));
-            }
-        });
+        return transporter.sendMail(mailOptions).then(res => {
+            functions.logger.log('E-mail delivered!');
+            return db.doc(`/peer-assessments/${id}`).set({
+                lastMailError: '',
+                lastMailDate: new Date().toLocaleDateString()
+            }, { merge: true })
+                .then(x => functions.logger.log(`Success writing e-mail delivered to peer assessment:: ${id}`, x))
+                .catch(err => functions.logger.error(`Error writing e-mail delivered to peer assessment:: ${id}`, err));
+        }
+        ).catch(erro => {
+            functions.logger.error('Error sending e-mail::', erro.toString());
+            return db.doc(`/peer-assessments/${id}`).set({
+                lastMailError: erro.toString(),
+                lastMailDate: null
+            }, { merge: true })
+                .then(x => functions.logger.log(`Success writing error to peer assessment:: ${id}`, x))
+                .catch(err => functions.logger.error(`Error writing error to peer assessment:: ${id}`, err));
+        })
     });
 
 
@@ -55,7 +58,7 @@ exports.emailPeerAssessmentContactsReminder = functions.https.onRequest((req, re
     corsHandler(req, res, () => {
         const reminder = req.body;
 
-        reminder.forEach((element: any) => {
+        reminder.forEach(async (element: any) => {
             const mailOptions = {
                 from: 'Tony Robinson Coaching - Peer Assessment <tonyrobinson.selfawareness@gmail.com>',
                 to: element.emailAddress,
@@ -67,30 +70,25 @@ exports.emailPeerAssessmentContactsReminder = functions.https.onRequest((req, re
 
             functions.logger.log('Starting Send E-mail for Peer-Assessment Contacts::', element.peerAssessmentId);
 
-            transporter.sendMail(mailOptions, (erro, info) => {
-                if (erro) {
-                    functions.logger.error('Error sending e-mail::', erro.toString());
-                    db.doc(`/peer-assessments/${element.peerAssessmentId}`).set({
-                        lastMailError: erro.toString(),
-                        lastMailDate: null
-                    }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment:: ${element.peerAssessmentId}`, err));
-                }
-                else {
-                    functions.logger.log('E-mail delivered!');
-                    db.doc(`/peer-assessments/${element.peerAssessmentId}`).set({
-                        lastMailError: '',
-                        lastMailDate: new Date().toLocaleDateString()
-                    }, { merge: true }).then().catch(err => functions.logger.error(`Error writing to peer assessment:: ${element.peerAssessmentId}`, err));;
-                }
-            });
+            await transporter.sendMail(mailOptions).then(res => {
+                functions.logger.log('E-mail delivered!');
+                return db.doc(`/peer-assessments/${element.peerAssessmentId}`).set({
+                    lastMailError: '',
+                    lastMailDate: new Date().toLocaleDateString()
+                }, { merge: true })
+                    .then(x => functions.logger.log(`Success writing error to peer assessment:: ${element.peerAssessmentId}`, x))
+                    .catch(err => functions.logger.error(`Error writing error to peer assessment:: ${element.peerAssessmentId}`, err));;
+            }).catch(erro => {
+                functions.logger.error('Error sending e-mail::', erro.toString());
+                return db.doc(`/peer-assessments/${element.peerAssessmentId}`).set({
+                    lastMailError: erro.toString(),
+                    lastMailDate: null
+                }, { merge: true })
+                    .then(x => functions.logger.log(`Success writing e-mail delivered to peer assessment:: ${element.peerAssessmentId}`, x))
+                    .catch(err => functions.logger.error(`Error writing e-mail delivered to peer assessment:: ${element.peerAssessmentId}`, err));
+            })
         });
 
-        res.send({ status: 'done'});
+        res.send({ status: 'done' });
     });
 });
-
-// Add email sent date to peer assessment record
-
-
-// fucntions for when new user added to firestore authenticatoin
-// insert row in users
