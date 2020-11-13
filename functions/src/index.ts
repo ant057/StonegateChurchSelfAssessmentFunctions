@@ -31,7 +31,7 @@ exports.emailPeerAssessmentContacts = functions.firestore.document('peer-assessm
             to: data.emailAddress,
             subject: 'Tony Robinson Coaching - Peer Assessment request',
             html: `Hi, ${data.fullName}! <br><br> You have been requested to complete a peer self-awareness assessment for <b>${data.selfUserFullName}</b>.<br> If you could complete
-            this by ${d2.toLocaleDateString()} that would be great! <br><br><a href="${'http://' + data.linkToAssessment}">Click here to take your peer assessment!</a> <br><br>Thank you so much for taking the time to assist in the leadership development of our 
+            this by ${d2.toLocaleDateString()} that would be great! <br><br><a href="${data.linkToAssessment}">Click here to take your peer assessment!</a> <br><br>Thank you so much for taking the time to assist in the leadership development of our 
             brothers and sisters in Christ.`
         };
 
@@ -68,7 +68,7 @@ exports.emailPeerAssessmentContactsReminder = functions.https.onRequest((req, re
                 to: element.emailAddress,
                 subject: 'Tony Robinson Coaching - Peer Assessment reminder',
                 html: `Hi, ${element.fullName}! <br><br> We want to send you a friendly reminder to complete your peer self-awareness assessment for <b>${element.selfUserFullName}</b>.<br><br>
-            <a href="${'http://' + element.linkToAssessment}">Click here to take your peer assessment!</a> <br><br>Thank you so much for taking the time to assist in the leadership development of our 
+            <a href="${element.linkToAssessment}">Click here to take your peer assessment!</a> <br><br>Thank you so much for taking the time to assist in the leadership development of our 
             brothers and sisters in Christ.`
             };
 
